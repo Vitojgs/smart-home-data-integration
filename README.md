@@ -50,5 +50,5 @@ Test-NetConnection localhost -Port 3000
 
 ## Estado
 
-Infra base validada: Mosquitto UP, Grafana UP, PostgreSQL `SELECT 1 OK`, Node-RED e KNIME instalados.
-Próximo: `sql/schema.sql`, `data/sensors.yaml` + CSV histórico, flow Node-RED, workflow KNIME, dashboard.
+Infra base validada: Mosquitto UP, Grafana UP, PostgreSQL, Node-RED e KNIME instalados.
+Já criados `sql/schema.sql`, `data/sensors.yaml` + CSV histórico, flow Node-RED. Por criar workflow KNIME, dashboard.
