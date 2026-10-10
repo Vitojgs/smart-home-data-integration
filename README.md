@@ -33,8 +33,6 @@ logs/                     # logs do Job
 grafana/                  # dashboard.json
 ```
 
-`documentacao/` existe apenas localmente e não é enviada para o GitHub.
-
 ## Como correr (infra base)
 
 ```powershell
