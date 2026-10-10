@@ -1,0 +1,6 @@
+# NÃO ENVIAR para o GitHub — material interno de trabalho
+documentacao/
+
+# Mosquitto runtime (gerado pelo broker)
+mosquitto/data/
+mosquitto/log/

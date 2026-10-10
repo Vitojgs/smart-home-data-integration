@@ -1,0 +1,26 @@
+devices:
+  - device_id: TEMP-SA-01
+    room: sala
+    type: temperature_humidity
+    owner: Familia Silva
+    valid_range:
+      temp_c: [10, 35]
+      humidity_pct: [20, 90]
+  - device_id: PIR-SA-01
+    room: sala
+    type: presence
+    owner: Joao Silva
+    valid_range:
+      battery_v: [2.8, 4.2]
+  - device_id: PLUG-CZ-01
+    room: cozinha
+    type: energy
+    owner: Maria Silva
+    valid_range:
+      power_w: [0, 2500]
+  - device_id: AIR-QT-01
+    room: quarto
+    type: air_quality
+    owner: Familia Silva
+    valid_range:
+      co2_ppm: [400, 1800]
