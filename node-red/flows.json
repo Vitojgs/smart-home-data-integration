@@ -24,6 +24,14 @@
         "env": []
     },
     {
+        "id": "0ee7a0a3d0682acd",
+        "type": "tab",
+        "label": "http request",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
         "id": "7975a9c9fdaa7150",
         "type": "mqtt-broker",
         "name": "Mosquitto local",
@@ -366,8 +374,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 900,
-        "y": 100,
+        "x": 570,
+        "y": 60,
         "wires": []
     },
     {
@@ -383,7 +391,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 900,
+        "x": 560,
         "y": 160,
         "wires": []
     },
@@ -400,7 +408,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 900,
+        "x": 570,
         "y": 240,
         "wires": []
     },
@@ -417,7 +425,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 900,
+        "x": 560,
         "y": 320,
         "wires": []
     },
@@ -544,6 +552,120 @@
         "encoding": "utf8",
         "x": 940,
         "y": 140,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "f16f2e3f832043a0",
+        "type": "http request",
+        "z": "0ee7a0a3d0682acd",
+        "name": "meteo-h1",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "https://archive-api.open-meteo.com/v1/archive?latitude=41.5275&longitude=-8.6157&start_date=2026-01-01&end_date=2026-06-30&hourly=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&timezone=Europe%2FLisbon",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 380,
+        "y": 160,
+        "wires": [
+            [
+                "ff742aaf2ee633df"
+            ]
+        ]
+    },
+    {
+        "id": "ff742aaf2ee633df",
+        "type": "function",
+        "z": "0ee7a0a3d0682acd",
+        "name": "meteo-h1",
+        "func": "const h = msg.payload.hourly, out = [];\nconst LAT = msg.payload.latitude, LON = msg.payload.longitude, TZ = msg.payload.timezone;\nfor (let i = 0; i < h.time.length; i++) {\n    out.push({ timestamp: h.time[i], temperature_c: h.temperature_2m[i], humidity_pct: h.relative_humidity_2m[i], weather_code: h.weather_code[i], wind_kmh: h.wind_speed_10m[i], latitude: LAT, longitude: LON, timezone: TZ });\n}\nmsg.payload = out;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 660,
+        "y": 160,
+        "wires": [
+            [
+                "cbfbeccaf5974d02"
+            ]
+        ]
+    },
+    {
+        "id": "7ca693d3209ff2cd",
+        "type": "inject",
+        "z": "0ee7a0a3d0682acd",
+        "name": "h1-uma-vez",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 90,
+        "y": 160,
+        "wires": [
+            [
+                "f16f2e3f832043a0"
+            ]
+        ]
+    },
+    {
+        "id": "cbfbeccaf5974d02",
+        "type": "csv",
+        "z": "0ee7a0a3d0682acd",
+        "name": "csv-h1",
+        "spec": "rfc",
+        "sep": ",",
+        "hdrin": "",
+        "hdrout": "once",
+        "multi": "mult",
+        "ret": "\\n",
+        "temp": "timestamp,temperature_c,humidity_pct,weather_code,wind_kmh,latitude,longitude,timezone",
+        "skip": "0",
+        "strings": true,
+        "include_empty_strings": "",
+        "include_null_values": "",
+        "x": 870,
+        "y": 160,
+        "wires": [
+            [
+                "d8b153f2f4229c06"
+            ]
+        ]
+    },
+    {
+        "id": "d8b153f2f4229c06",
+        "type": "file",
+        "z": "0ee7a0a3d0682acd",
+        "name": "grava-h1",
+        "filename": "C:\\Users\\Silva\\Documents\\OpencodeProjetos\\smart-home-data-integration\\data\\open_meteo_barcelos_2026H1_node.csv",
+        "filenameType": "str",
+        "appendNewline": true,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "utf8",
+        "x": 1020,
+        "y": 160,
         "wires": [
             []
         ]
