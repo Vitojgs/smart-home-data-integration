@@ -16,6 +16,14 @@
         "env": []
     },
     {
+        "id": "36ec4ddb1f80cb3e",
+        "type": "tab",
+        "label": "Simula-H1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
         "id": "7975a9c9fdaa7150",
         "type": "mqtt-broker",
         "name": "Mosquitto local",
@@ -87,7 +95,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 440,
+        "x": 340,
         "y": 300,
         "wires": [
             [
@@ -111,7 +119,7 @@
         "strings": true,
         "include_empty_strings": true,
         "include_null_values": "",
-        "x": 700,
+        "x": 560,
         "y": 300,
         "wires": [
             [
@@ -130,7 +138,7 @@
         "createDir": false,
         "overwriteFile": "true",
         "encoding": "utf8",
-        "x": 1250,
+        "x": 1030,
         "y": 300,
         "wires": [
             []
@@ -429,5 +437,115 @@
         "x": 1100,
         "y": 220,
         "wires": []
+    },
+    {
+        "id": "46b92046489b1d26",
+        "type": "inject",
+        "z": "36ec4ddb1f80cb3e",
+        "name": "go",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "iso",
+        "payloadType": "date",
+        "x": 170,
+        "y": 140,
+        "wires": [
+            [
+                "cbb5b25855d9b275"
+            ]
+        ]
+    },
+    {
+        "id": "cbb5b25855d9b275",
+        "type": "file in",
+        "z": "36ec4ddb1f80cb3e",
+        "name": "ler-ext",
+        "filename": "C:\\Users\\Silva\\Documents\\OpencodeProjetos\\smart-home-data-integration\\data\\open_meteo_barcelos_2026H1.csv",
+        "filenameType": "str",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "utf8",
+        "allProps": false,
+        "x": 350,
+        "y": 140,
+        "wires": [
+            [
+                "187dc4153cd7355f"
+            ]
+        ]
+    },
+    {
+        "id": "187dc4153cd7355f",
+        "type": "function",
+        "z": "36ec4ddb1f80cb3e",
+        "name": "4simula",
+        "func": "// entrada: msg.payload = texto do CSV exterior | saída: array p/ nó csv\nconst lines = msg.payload.trim().split(\"\\n\");\nconst H = lines[0].split(\",\");\nconst idx = Object.fromEntries(H.map((c, i) => [c, i]));\nconst ext = lines.slice(1).map(l => { const p = l.split(\",\"); return { ts: p[idx.timestamp], te: +p[idx.temperature_c], rhe: +p[idx.humidity_pct] }; });\nconst sat = t => 6.112 * Math.exp((17.67 * t) / (t + 243.5));\nconst ah = (t, rh) => 216.7 * (rh / 100 * sat(t)) / (273.15 + t);\nconst rhFrom = (t, a) => Math.max(5, Math.min(100, 100 * a * (273.15 + t) / (216.7 * sat(t))));\nlet ts = 18.0, tq = 17.5, ahs = ah(18, 55), ahq = ah(17.5, 55);\nconst out = [];\nconst pres = h => ((h >= 7 && h <= 9) || (h >= 12 && h <= 14) || (h >= 18 && h <= 23)) ? Math.random() < 0.7 : Math.random() < 0.05;\nfor (const r of ext) {\n    const h = +r.ts.slice(11, 13), m = +r.ts.slice(5, 7);\n    const open = (h === 8 || h === 9 || h === 10) && (r.te < ts - 2);\n    const k = open ? 0.22 : 0.04, kq = open ? 0.18 : 0.03;\n    const p = pres(h), cook = (h >= 19 && h <= 21);\n    let qac = 0, qh = 0, pw = 120 + Math.random() * 80, sc = open ? \"ventilar\" : \"fechado\";\n    if (ts > 26.5 && p) { qac = -1.2; pw = 1500; sc = \"climatizar\"; }\n    else if (m <= 3 && ts < 19) { qh = 1.0; pw = 1200; sc = \"fechado_aquecer\"; }\n    ts += k * (r.te - ts) + qac + qh + (cook ? 0.18 : 0) + (p ? 0.03 : 0);\n    tq += kq * (r.te - tq) + qac * 0.8 + qh * 0.8 + (p ? 0.05 : 0);\n    ahs += k * (ah(r.te, r.rhe) - ahs) + (cook ? 1.5 : 0) + (p ? 0.1 : 0);\n    ahq += kq * (ah(r.te, r.rhe) - ahq) + (p ? 0.1 : 0);\n    out.push({ timestamp: r.ts, device_id: \"TEMP-SA-01\", room: \"sala\", metric: \"temp_c\", value: ts.toFixed(1) });\n    out.push({ timestamp: r.ts, device_id: \"TEMP-SA-01\", room: \"sala\", metric: \"humidity_pct\", value: String(Math.round(rhFrom(ts, ahs))) });\n    out.push({ timestamp: r.ts, device_id: \"PIR-SA-01\", room: \"sala\", metric: \"presence\", value: String(p) });\n    out.push({ timestamp: r.ts, device_id: \"PLUG-CZ-01\", room: \"cozinha\", metric: \"power_w\", value: String(Math.round(pw + (cook ? 1800 : 0))) });\n    out.push({ timestamp: r.ts, device_id: \"AIR-QT-01\", room: \"quarto\", metric: \"co2_ppm\", value: String(Math.round(450 + (p ? 350 + Math.random() * 300 : Math.random() * 80))) });\n}\nfor (let i = 0; i < out.length * 0.05; i++) out[Math.floor(Math.random() * out.length)].value = \"\";\nfor (let i = 0; i < 20; i++) out.push(out[Math.floor(Math.random() * out.length)]);\nfor (let i = 0; i < 10; i++) { const x = out[Math.floor(Math.random() * out.length)]; if (x.metric === \"temp_c\") x.value = String(x.value).replace(\".\", \",\") + \"C\"; }\nmsg.payload = out; return msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 540,
+        "y": 140,
+        "wires": [
+            [
+                "b7c5922526b7ee50"
+            ]
+        ]
+    },
+    {
+        "id": "b7c5922526b7ee50",
+        "type": "csv",
+        "z": "36ec4ddb1f80cb3e",
+        "name": "csv-H1",
+        "spec": "rfc",
+        "sep": ",",
+        "hdrin": "",
+        "hdrout": "once",
+        "multi": "one",
+        "ret": "\\r\\n",
+        "temp": "timestamp,device_id,room,metric,value",
+        "skip": "0",
+        "strings": true,
+        "include_empty_strings": "",
+        "include_null_values": "",
+        "x": 740,
+        "y": 140,
+        "wires": [
+            [
+                "10c35c492f69e691"
+            ]
+        ]
+    },
+    {
+        "id": "10c35c492f69e691",
+        "type": "file",
+        "z": "36ec4ddb1f80cb3e",
+        "name": "grava-hist",
+        "filename": "C:\\Users\\Silva\\Documents\\OpencodeProjetos\\smart-home-data-integration\\data\\history_readings.csv",
+        "filenameType": "str",
+        "appendNewline": true,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "utf8",
+        "x": 940,
+        "y": 140,
+        "wires": [
+            []
+        ]
     }
 ]

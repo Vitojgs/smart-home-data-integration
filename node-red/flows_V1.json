@@ -1,0 +1,433 @@
+[
+    {
+        "id": "ec9bc94cd09020cb",
+        "type": "tab",
+        "label": "Historico-H1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "ef9c7b1f75b201a7",
+        "type": "tab",
+        "label": "Tempo-real",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "7975a9c9fdaa7150",
+        "type": "mqtt-broker",
+        "name": "Mosquitto local",
+        "broker": "localhost",
+        "port": 1883,
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": 4,
+        "keepalive": 60,
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "5885fd6e5572d679",
+        "type": "inject",
+        "z": "ec9bc94cd09020cb",
+        "name": "gerar-H1",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "iso",
+        "payloadType": "date",
+        "x": 100,
+        "y": 300,
+        "wires": [
+            [
+                "3227d8583bea1124"
+            ]
+        ]
+    },
+    {
+        "id": "3227d8583bea1124",
+        "type": "function",
+        "z": "ec9bc94cd09020cb",
+        "name": "gera-H1",
+        "func": "const start = new Date(2026, 0, 1, 0, 0, 0);\nconst out = [];\nconst n = 181 * 24;\nfor (let i = 0; i < n; i++) {\n     const ts = new Date(start.getTime() + i * 3600e3);\n    const hh = ts.getHours();\n    if (hh !== 8 && hh !== 14 && hh !== 22) continue;\n    const iso = ts.getFullYear() + \"-\" + String(ts.getMonth()+1).padStart(2,\"0\") + \"-\" +\n        String(ts.getDate()).padStart(2,\"0\") + \"T\" + String(ts.getHours()).padStart(2,\"0\") + \":00\";\n    const dayOfYear = Math.floor(i / 24);\n    const base = 17 + 7 * Math.sin((dayOfYear - 30) / 181 * Math.PI);\n    let t = base + (Math.random()-0.5)*2;\n    let h = 55 + (Math.random()-0.5)*15;\n    let p = Math.max(0, 400 + (t-20)*120 + (Math.random()-0.5)*300);\n    let co2 = 600 + Math.random()*500 + ((ts.getHours()>=19&&ts.getHours()<=23)?300:0);\n    out.push({timestamp:iso, device_id:\"TEMP-SA-01\", room:\"sala\", metric:\"temp_c\", value:t.toFixed(1)});\n    out.push({timestamp:iso, device_id:\"TEMP-SA-01\", room:\"sala\", metric:\"humidity_pct\", value:h.toFixed(0)});\n    out.push({timestamp:iso, device_id:\"PIR-SA-01\", room:\"sala\", metric:\"presence\", value:Math.random()<0.3?\"true\":\"false\"});\n    out.push({timestamp:iso, device_id:\"PLUG-CZ-01\", room:\"cozinha\", metric:\"power_w\", value:Math.round(Math.min(2500,p))});\n    out.push({timestamp:iso, device_id:\"AIR-QT-01\", room:\"quarto\", metric:\"co2_ppm\", value:Math.round(Math.min(1800,Math.max(400,co2)))});\n}\nfor (let k=0;k<out.length*0.05;k++) out[Math.floor(Math.random()*out.length)].value=\"\";\nfor (let k=0;k<20;k++) out.push(out[Math.floor(Math.random()*out.length)]);\nfor (let k=0;k<10;k++){let r=out[Math.floor(Math.random()*out.length)]; if(r.metric===\"temp_c\") r.value=String(r.value).replace(\".\",\",\")+\"C\";}\nmsg.payload = out;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 440,
+        "y": 300,
+        "wires": [
+            [
+                "eadbe2ca52aa9bf2"
+            ]
+        ]
+    },
+    {
+        "id": "eadbe2ca52aa9bf2",
+        "type": "csv",
+        "z": "ec9bc94cd09020cb",
+        "name": "csv-H1",
+        "spec": "rfc",
+        "sep": ",",
+        "hdrin": "",
+        "hdrout": "once",
+        "multi": "one",
+        "ret": "\\n",
+        "temp": "timestamp,device_id,room,metric,value",
+        "skip": "0",
+        "strings": true,
+        "include_empty_strings": true,
+        "include_null_values": "",
+        "x": 700,
+        "y": 300,
+        "wires": [
+            [
+                "f10d36532ea8903d"
+            ]
+        ]
+    },
+    {
+        "id": "f10d36532ea8903d",
+        "type": "file",
+        "z": "ec9bc94cd09020cb",
+        "name": "",
+        "filename": "C:\\Users\\Silva\\Documents\\OpencodeProjetos\\smart-home-data-integration\\data\\history_readings.csv",
+        "filenameType": "str",
+        "appendNewline": true,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "utf8",
+        "x": 1250,
+        "y": 300,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "8c4c887286a29c90",
+        "type": "function",
+        "z": "ef9c7b1f75b201a7",
+        "name": "TEMP",
+        "func": "let t = context.get('t') ?? 22;\nt += (Math.random() - 0.5) * 0.6;\nt = Math.min(30, Math.max(16, t));\ncontext.set('t', t);\nlet h = 55 + (Math.random() - 0.5) * 4;\nmsg.payload = { device_id: \"TEMP-SA-01\", temp_c: +t.toFixed(1), humidity_pct: +h.toFixed(0) };\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 100,
+        "wires": [
+            [
+                "fc51c1f4067941a2",
+                "dbgTEMP01"
+            ]
+        ]
+    },
+    {
+        "id": "aec4ebf16bf37e96",
+        "type": "function",
+        "z": "ef9c7b1f75b201a7",
+        "name": "PIR",
+        "func": "msg.payload = { device_id:\"PIR-SA-01\", presence: Math.random() < 0.3, battery_v:+(3.0+Math.random()*1.2).toFixed(2) };\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 200,
+        "wires": [
+            [
+                "3363f9195bedc157",
+                "dbgPIR01"
+            ]
+        ]
+    },
+    {
+        "id": "6c5ee22e2f4cbd3d",
+        "type": "function",
+        "z": "ef9c7b1f75b201a7",
+        "name": "PLUG",
+        "func": "let p = context.get('p') ?? 400;\np += (Math.random()-0.5)*300;\np = Math.min(2500, Math.max(0, p));\ncontext.set('p', p);\nmsg.payload = { device_id:\"PLUG-CZ-01\", power_w:Math.round(p), daily_kwh:+(p/1000*0.5).toFixed(3) };\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 280,
+        "wires": [
+            [
+                "8cd53756f11275dd",
+                "dbgPLUG01"
+            ]
+        ]
+    },
+    {
+        "id": "02b1ca2653a12539",
+        "type": "function",
+        "z": "ef9c7b1f75b201a7",
+        "name": "AIR",
+        "func": "let c = context.get('c') ?? 700;\nc += (Math.random()-0.5)*80;\nc = Math.min(1800, Math.max(400, c));\ncontext.set('c', c);\nmsg.payload = { device_id:\"AIR-QT-01\", co2_ppm:Math.round(c) };\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 360,
+        "wires": [
+            [
+                "7d37d00af53bb80d",
+                "dbgAIR01"
+            ]
+        ]
+    },
+    {
+        "id": "3363f9195bedc157",
+        "type": "mqtt out",
+        "z": "ef9c7b1f75b201a7",
+        "name": "PIR",
+        "topic": "home/sala/presenca",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "7975a9c9fdaa7150",
+        "x": 690,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "8cd53756f11275dd",
+        "type": "mqtt out",
+        "z": "ef9c7b1f75b201a7",
+        "name": "PLUG",
+        "topic": "home/cozinha/energia",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "7975a9c9fdaa7150",
+        "x": 690,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "7d37d00af53bb80d",
+        "type": "mqtt out",
+        "z": "ef9c7b1f75b201a7",
+        "name": "AIR",
+        "topic": "home/quarto/ar",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "7975a9c9fdaa7150",
+        "x": 690,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "8a814a2db444b7d0",
+        "type": "mqtt in",
+        "z": "ef9c7b1f75b201a7",
+        "name": "teste",
+        "topic": "home/#",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "7975a9c9fdaa7150",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 930,
+        "y": 220,
+        "wires": [
+            [
+                "dbgMQTT01"
+            ]
+        ]
+    },
+    {
+        "id": "c851d4cf61ac0e75",
+        "type": "inject",
+        "z": "ef9c7b1f75b201a7",
+        "name": "10s",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "10",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 150,
+        "y": 220,
+        "wires": [
+            [
+                "8c4c887286a29c90",
+                "aec4ebf16bf37e96",
+                "6c5ee22e2f4cbd3d",
+                "02b1ca2653a12539"
+            ]
+        ]
+    },
+    {
+        "id": "fc51c1f4067941a2",
+        "type": "mqtt out",
+        "z": "ef9c7b1f75b201a7",
+        "name": "TEMP",
+        "topic": "home/sala/temperatura",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "7975a9c9fdaa7150",
+        "x": 690,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "dbgTEMP01",
+        "type": "debug",
+        "z": "ef9c7b1f75b201a7",
+        "name": "dbg TEMP",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 900,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "dbgPIR01",
+        "type": "debug",
+        "z": "ef9c7b1f75b201a7",
+        "name": "dbg PIR",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 900,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "dbgPLUG01",
+        "type": "debug",
+        "z": "ef9c7b1f75b201a7",
+        "name": "dbg PLUG",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 900,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "dbgAIR01",
+        "type": "debug",
+        "z": "ef9c7b1f75b201a7",
+        "name": "dbg AIR",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 900,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "dbgMQTT01",
+        "type": "debug",
+        "z": "ef9c7b1f75b201a7",
+        "name": "dbg MQTT",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1100,
+        "y": 220,
+        "wires": []
+    }
+]
